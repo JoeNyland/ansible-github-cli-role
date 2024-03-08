@@ -1,0 +1,30 @@
+---
+- name: Install GitHub CLI
+  become: true
+  tags:
+    - github
+    - gh
+  block:
+    - name: Create keyring directory
+      file:
+        path: /etc/apt/keyrings # Does not exist on Debian < 12
+        state: directory
+        mode: '0755'
+      when: ansible_distribution_major_version | int < 12
+    - name: Add apt GPG keyring
+      get_url:
+        url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+        dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+        mode: '0644'
+        force: true # Download new versions when they are available
+    - name: Add apt repository
+      apt_repository:
+        repo: >
+          deb
+          [signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg]
+          https://cli.github.com/packages stable main
+        filename: github-cli
+        update_cache: true
+    - name: Install
+      apt:
+        name: gh
